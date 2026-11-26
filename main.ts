@@ -12,17 +12,16 @@ const target = join(outDir, "entry.txt");
 writeFileSync(target, LINE, "utf8");
 
 // Verify the gate locally: exact bytes, 1-240 chars, one line, no newline.
+const GATE: ReadonlyArray<readonly [string, (s: string) => boolean]> = [
+  ["entry.txt does not match the line", (s) => s === LINE],
+  ["line length outside 1-240", (s) => s.length >= 1 && s.length <= 240],
+  ["line must not contain a newline", (s) => !s.includes("\n") && !s.includes("\r")],
+  ["line must not be blank", (s) => s.trim().length > 0],
+];
 const written = readFileSync(target, "utf8");
-if (written !== LINE) {
-  throw new Error("entry.txt does not match the line");
-}
-if (written.length < 1 || written.length > 240) {
-  throw new Error(`line length ${written.length} outside 1-240`);
-}
-if (written.includes("\n") || written.includes("\r")) {
-  throw new Error("line must not contain a newline");
-}
-if (!written.trim()) {
-  throw new Error("line must not be blank");
+for (const [message, holds] of GATE) {
+  if (!holds(written)) {
+    throw new Error(message);
+  }
 }
 console.log(`wrote entry.txt (${written.length} chars)`);
